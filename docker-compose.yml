@@ -1,0 +1,15 @@
+version: '3.7'
+services:
+   database:
+     image: mysql:latest
+     environment:
+       MYSQL_ROOT_PASSWORD: 'admin'
+       MYSQL_USER: 'westernacher'
+       MYSQL_PASSWORD: 'java'
+     ports:
+       - '3306:3306'
+   user-management:
+    build:
+      context: .
+    ports:
+      - '8080:8080'

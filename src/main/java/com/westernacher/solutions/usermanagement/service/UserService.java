@@ -34,4 +34,16 @@ public class UserService {
 				.map(user -> modelMapper.map(user, UserDTO.class))
 				.collect(Collectors.toList());
 	}
+
+	public UserDTO getById(Long userID) {
+		return modelMapper.map(
+				userRepository.getOne(userID),
+				UserDTO.class);
+	}
+
+	public UserDTO updateUserByID(Long userId, UserDTO updatedUser) {
+		var user  = userRepository.getOne(userId);
+		user.update(modelMapper.map(updatedUser, User.class));
+		return modelMapper.map(userRepository.save(user), UserDTO.class);
+	}
 }

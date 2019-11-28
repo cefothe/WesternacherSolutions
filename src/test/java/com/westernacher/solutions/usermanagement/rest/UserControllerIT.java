@@ -6,25 +6,31 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.westernacher.solutions.usermanagement.domain.User;
 import com.westernacher.solutions.usermanagement.dto.UserDTO;
+import com.westernacher.solutions.usermanagement.repository.UserRepository;
 import org.junit.jupiter.api.Test;
+import org.modelmapper.ModelMapper;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
+@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
 @AutoConfigureMockMvc
 @SpringBootTest
 public class UserControllerIT {
@@ -34,6 +40,12 @@ public class UserControllerIT {
 
 	@Autowired
 	private MockMvc mvc;
+
+	@Autowired
+	private ModelMapper modelMapper;
+
+	@Autowired
+	private UserRepository userRepository;
 
 	@Test
 	public void createNewUserAccount() throws Exception {
@@ -53,8 +65,11 @@ public class UserControllerIT {
 		//given
 		var expectedUsers = Arrays.asList(
 				new UserDTO("Stefan", "Angelov", "cefothe@gmail.com", LocalDate.of(1994,1,30)),
-				new UserDTO("Ivan", "Petkov", "cefothe1@gmail.com", LocalDate.of(1994,1,30)));
+				new UserDTO("Georgie", "Petkov", "cefothe1@gmail.com", LocalDate.of(1994,1,30)));
 
+		expectedUsers.forEach(userDTO -> {
+			userRepository.save(modelMapper.map(userDTO, User.class));
+		});
 		// when
 		var response = mvc.perform(get("/api/v1/users"))
 				.andExpect(status().isOk())
@@ -65,12 +80,15 @@ public class UserControllerIT {
 				new TypeReference<List<UserDTO>>() {});
 
 		assertThat(users, hasSize(2));
-		assertThat(users, containsInAnyOrder(expectedUsers));
+		assertEquals(users, expectedUsers);
 	}
 
 	@Test
 	public void updateUserById() throws Exception {
 		//given
+		var userInDatabase = new UserDTO("Georgie", "Petkov", "cefothe1@gmail.com", LocalDate.of(1994,1,30));
+		userRepository.save(modelMapper.map(userInDatabase, User.class));
+
 		var newUserInformation = new UserDTO("Stefan", "Angelov", "cefothe@gmail.com", LocalDate.of(1994,1,30));
 
 		//when
@@ -89,6 +107,8 @@ public class UserControllerIT {
 	public void getUserById() throws Exception {
 		//given
 		var userInDatabase = new UserDTO("Stefan", "Angelov", "cefothe@gmail.com", LocalDate.of(1994,1,30));
+		var user = modelMapper.map(userInDatabase, User.class);
+		userRepository.save(user);
 
 		//when
 		var response = mvc.perform(get("/api/v1/users/{userId}",1))
@@ -96,8 +116,8 @@ public class UserControllerIT {
 				.andReturn();
 
 		//then
-		var user =  objectMapper.readValue(response.getResponse().getContentAsString(), UserDTO.class);
-		assertThat(user, equalTo(userInDatabase));
+		var userResponse =  objectMapper.readValue(response.getResponse().getContentAsString(), UserDTO.class);
+		assertThat(userResponse, equalTo(userInDatabase));
 	}
 
 }

@@ -17,15 +17,26 @@ import lombok.NoArgsConstructor;
 @Entity
 public class User extends BaseEntity{
 	@NotNull
-	@Size(min = 5, max = 255 )
+	@Size(min = 3, max = 255 )
 	private  String firstName;
 
 	@NotNull
-	@Size(min = 5, max = 255 )
+	@Size(min = 3, max = 255 )
 	private  String lastName;
 
 	@Email
 	private  String emailAddress;
 
 	private LocalDate dateOfBirth;
+
+	/**
+	 * This method is responsible to update the {@link User} with new information
+	 * @param updated {@link User} user object that contains all information without databaseId
+	 */
+	public void update(User updated) {
+		this.firstName = updated.firstName;
+		this.lastName = updated.lastName;
+		this.emailAddress = updated.emailAddress;
+		this.dateOfBirth = updated.dateOfBirth;
+	}
 }

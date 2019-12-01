@@ -12,6 +12,6 @@ import lombok.Data;
 public abstract class BaseEntity {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
-	public Long id;
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 }

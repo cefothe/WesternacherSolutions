@@ -4,8 +4,6 @@ services:
      image: mysql:latest
      environment:
        MYSQL_ROOT_PASSWORD: 'admin'
-       MYSQL_USER: 'westernacher'
-       MYSQL_PASSWORD: 'java'
      ports:
        - '3306:3306'
    user-management:
@@ -13,3 +11,7 @@ services:
       context: .
     ports:
       - '8080:8080'
+    environment:
+      - "SPRING_PROFILES_ACTIVE=docker"
+    links:
+      - database

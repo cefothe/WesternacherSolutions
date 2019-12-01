@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -24,12 +26,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
+@AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2)
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
 @AutoConfigureMockMvc
 @SpringBootTest
@@ -67,9 +72,7 @@ public class UserControllerIT {
 				new UserDTO("Stefan", "Angelov", "cefothe@gmail.com", LocalDate.of(1994,1,30)),
 				new UserDTO("Georgie", "Petkov", "cefothe1@gmail.com", LocalDate.of(1994,1,30)));
 
-		expectedUsers.forEach(userDTO -> {
-			userRepository.save(modelMapper.map(userDTO, User.class));
-		});
+		expectedUsers.forEach(userDTO -> userRepository.save(modelMapper.map(userDTO, User.class)));
 		// when
 		var response = mvc.perform(get("/api/v1/users"))
 				.andExpect(status().isOk())
@@ -118,6 +121,32 @@ public class UserControllerIT {
 		//then
 		var userResponse =  objectMapper.readValue(response.getResponse().getContentAsString(), UserDTO.class);
 		assertThat(userResponse, equalTo(userInDatabase));
+	}
+
+	@Test
+	public void getUserByIdThatNotExist() throws Exception {
+
+		//when
+		var response = mvc.perform(delete("/api/v1/users/{userId}",100))
+				.andExpect(status().isNotFound())
+				.andReturn();
+	}
+
+	@Test
+	public void deleteUserById() throws Exception {
+		//given
+		var userInDatabase = new UserDTO("Stefan", "Angelov", "cefothe@gmail.com", LocalDate.of(1994,1,30));
+		var user = modelMapper.map(userInDatabase, User.class);
+		userRepository.save(user);
+
+		//when
+		var response = mvc.perform(delete("/api/v1/users/{userId}",1))
+				.andExpect(status().isNoContent())
+				.andReturn();
+
+		//then
+		assertFalse(userRepository.findById(1L).isPresent());
+
 	}
 
 }
